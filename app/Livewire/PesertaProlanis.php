@@ -10,13 +10,20 @@ class PesertaProlanis extends Component
 {
     public function render()
     {
-        return view('livewire.peserta-prolanis');
+        $dataPeserta = ModelsPesertaProlanis::orderBy('created_at', 'desc')->get();
+
+        // Kirim variabel $dataPeserta ke view
+        return view('livewire.peserta-prolanis', [
+            'dataPeserta' => $dataPeserta
+        ]);
     }
 
-    #[Validate('required|digits:16')]
+    // Tambahkan unique:peserta_prolanis,nik
+    #[Validate('required|digits:3|unique:peserta_prolanis,nik')]
     public $nik = '';
 
-    #[Validate('required|digits:13')]
+    // Tambahkan unique:peserta_prolanis,no_bpjs
+    #[Validate('required|digits:3|unique:peserta_prolanis,no_bpjs')]
     public $no_bpjs = '';
 
     #[Validate('required')]
@@ -25,7 +32,7 @@ class PesertaProlanis extends Component
     #[Validate('required')]
     public $alamat = '';
 
-    #[Validate('required')]
+    #[Validate('required|digits:3')]
     public $no_hp = '';
 
     #[Validate('required')]
@@ -35,10 +42,12 @@ class PesertaProlanis extends Component
     {
         return [
             'nik.required' => 'NIK wajib diisi.',
-            'nik.digits' => 'NIK harus terdiri dari 16 digit.',
+            'nik.digits' => 'NIK harus terdiri dari tepat 16 digit.',
+            'nik.unique' => 'NIK ini sudah terdaftar. Silakan gunakan NIK lain.', // Pesan error baru
 
             'no_bpjs.required' => 'Nomor BPJS wajib diisi.',
-            'no_bpjs.digits' => 'Nomor BPJS harus terdiri dari 13 digit.',
+            'no_bpjs.digits' => 'Nomor BPJS harus terdiri dari tepat 13 digit.',
+            'no_bpjs.unique' => 'Nomor BPJS ini sudah terdaftar. Silakan gunakan nomor lain.', // Pesan error baru
         ];
     }
 
@@ -54,5 +63,29 @@ class PesertaProlanis extends Component
             'no_hp' => $this->no_hp,
             'diagnosa' => $this->diagnosa,
         ]);
+
+        $this->reset();
+
+        $this->dispatch('peserta-ditambahkan');
+
+        session()->flash('sukses', 'Peserta prolanis berhasil ditambahkan !');
+    }
+
+    public $idHapus;
+
+    public function hapusPeserta($id)
+    {
+        // Mencari data berdasarkan ID
+        $peserta = ModelsPesertaProlanis::find($id);
+
+        if ($peserta) {
+            $peserta->delete();
+
+            // Memberikan feedback sukses
+            //session()->flash('sukses', 'Data berhasil dihapus.');
+
+            // Dispatch event untuk menutup modal dan mungkin memberi notifikasi
+            $this->dispatch('peserta-dihapus');
+        }
     }
 }
